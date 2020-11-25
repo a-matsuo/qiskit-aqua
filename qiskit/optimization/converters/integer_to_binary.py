@@ -226,3 +226,35 @@ class IntegerToBinary(QuadraticProgramConverter):
             else:
                 new_x[i] = sol[var.name]
         return np.array(new_x)
+
+    def interpret_samples(self, samples: List[Tuple[str, float, float]]
+                           ) -> List[Tuple[str, float, float]]:
+        """Convert back the bitstring (binary variables) in the samples
+        to the original (integer variables)
+
+        Args:
+            samples: obtained samples after applying the optimization algorithms.
+
+        Returns:
+            The samples with original variables.
+        """
+        new_samples = []
+
+        for sample in samples:
+            sample_x = sample[0]
+            new_sample_x = [''] * self._src.get_num_vars()
+
+            sol = {var.name: sample_x[i] for i, var in enumerate(self._dst.variables)}
+            for i, var in enumerate(self._src.variables):
+                if var in self._conv:
+                    new_sample_x[i] = sum(int(sol[aux]) * coef for aux,
+                                          coef in self._conv[var]) + var.lowerbound
+                    new_sample_x[i] = str(int(new_sample_x[i]))
+                else:
+                    new_sample_x[i] = str(sol[var.name])
+
+            new_sample_fval = copy.deepcopy(sample[1])
+            new_sample_probability = copy.deepcopy(sample[2])
+            new_samples += [(''.join(new_sample_x), new_sample_fval, new_sample_probability)]
+
+        return new_samples

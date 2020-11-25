@@ -14,7 +14,7 @@
 import copy
 import logging
 import math
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple
 
 import numpy as np
 
@@ -393,6 +393,47 @@ class InequalityToEquality(QuadraticProgramConverter):
         for i, var in enumerate(self._src.variables):
             new_x[i] = sol[var.name]
         return new_x
+
+    def interpret_samples(self, samples: List[Tuple[str, float, float]]
+                           ) -> List[Tuple[str, float, float]]:
+        """Convert back the bitstring (binary variables) in the samples
+        to the original by removing bits. The probability of removed bits are aggregated.
+
+        Args:
+            samples: obtained samples after applying the optimization algorithms.
+
+        Returns:
+            The samples with original variables.
+        """
+
+        src_var_names = [var.name for var in self._src.variables]
+        dst_to_src_var_map = [-1] * self._dst.get_num_vars()
+        for i, var in enumerate(self._dst.variables):
+            if var.name in src_var_names:
+                dst_to_src_var_map[i] = src_var_names.index(var.name)
+            else:
+                dst_to_src_var_map[i] = -1
+
+        temp_samples = {}
+        for sample in samples:
+            sample_x = sample[0]
+            new_sample_x = [''] * self._src.get_num_vars()
+            for i, bit in enumerate(sample_x):
+                print(i)
+                if dst_to_src_var_map[i] > -1:
+                    new_sample_x[dst_to_src_var_map[i]] = bit
+            new_x_str = ''.join(new_sample_x)
+
+            if new_x_str in temp_samples:
+                temp_samples[new_x_str][1] += sample[2]
+            else:
+                new_sample_fval = self._src.objective.evaluate([int(bit) for bit in new_sample_x])
+                temp_samples[new_x_str] = [new_sample_fval, sample[2]]
+
+        new_samples = [(x, v[0], v[1]) for x, v in temp_samples.items()]
+        new_samples.sort(key=lambda x: self._src.objective.sense.value * x[1])
+        return new_samples
+
 
     @staticmethod
     def _contains_any_float_value(values: List[Union[int, float]]) -> bool:

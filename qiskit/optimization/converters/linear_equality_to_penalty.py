@@ -179,6 +179,20 @@ class LinearEqualityToPenalty(QuadraticProgramConverter):
             )
         return np.asarray(x)
 
+    def interpret_samples(self, samples: List[Tuple[str, float, float]]
+                          ) -> List[Tuple[str, float, float]]:
+        """Convert back the bitstring in the samples to the original.
+        In this converter, it does not change the bitstring unlike ones in `IntegerToBinary` or
+        `InequalityToEquality`.
+
+        Args:
+            samples: obtained samples after applying the optimization algorithms.
+
+        Returns:
+            The samples with original variables.
+        """
+        return copy.deepcopy(samples)
+
     @property
     def penalty(self) -> Optional[float]:
         """Returns the penalty factor used in conversion.

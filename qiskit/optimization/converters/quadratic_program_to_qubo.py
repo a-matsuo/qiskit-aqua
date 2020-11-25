@@ -12,7 +12,7 @@
 
 """A converter from quadratic program to a QUBO."""
 
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Tuple
 
 import numpy as np
 
@@ -90,6 +90,22 @@ class QuadraticProgramToQubo(QuadraticProgramConverter):
         x = self._int_to_bin.interpret(x)
         x = self._ineq_to_eq.interpret(x)
         return x
+
+    def interpret_samples(self, samples: List[Tuple[str, float, float]]
+                           ) -> List[Tuple[str, float, float]]:
+        """Convert back the bitstring (binary variables) in the samples
+        to the original.
+
+        Args:
+            samples: obtained samples after applying the optimization algorithms.
+
+        Returns:
+            The samples with original variables.
+        """
+        samples = self._penalize_lin_eq_constraints.interpret_samples(samples)
+        samples = self._int_to_bin.interpret_samples(samples)
+        samples = self._ineq_to_eq.interpret_samples(samples)
+        return samples
 
     @staticmethod
     def get_compatibility_msg(problem: QuadraticProgram) -> str:

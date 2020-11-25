@@ -215,7 +215,11 @@ class MinimumEigenOptimizer(OptimizationAlgorithm):
                                                   status=OptimizationResultStatus.FAILURE,
                                                   samples=None,
                                                   min_eigen_solver_result=eigen_result)
+
         # translate result back to integers
+        for converter in self._converters[::-1]:
+            samples = converter.interpret_samples(samples)
+
         return cast(MinimumEigenOptimizationResult,
                     self._interpret(x=x, converters=self._converters, problem=problem,
                                     result_class=MinimumEigenOptimizationResult,
